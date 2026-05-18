@@ -209,6 +209,14 @@
 
   .slider-row:last-child { border-bottom: none; }
 
+  .slider-row.tethered {
+    background: linear-gradient(to right, var(--bg) 0, var(--bg) 18px, transparent 18px);
+    padding-left: 28px;
+    margin-left: -28px;
+    padding-right: 0;
+    border-left: 2px solid var(--rust);
+  }
+
   .slider-label {
     font-size: 14px;
     color: var(--text);
@@ -375,17 +383,26 @@
 
   <div class="section-head">
     <div class="section-title">Assumptions</div>
-    <div class="section-meta">7 inputs &middot; adjust to taste</div>
+    <div class="section-meta">8 inputs &middot; adjust to taste</div>
   </div>
 
   <div class="sliders">
     <div class="slider-row">
       <div>
-        <div class="slider-label">Qumulo ARR</div>
+        <div class="slider-label">Qumulo ARR (total)</div>
         <div class="slider-label-sub">Base — $M of annual recurring revenue</div>
       </div>
       <input type="range" id="arr" min="50" max="700" step="10" value="250" />
       <div class="slider-value" id="arr-out">$250M</div>
+    </div>
+
+    <div class="slider-row tethered">
+      <div>
+        <div class="slider-label">↳ Qumulo ARR with Cisco</div>
+        <div class="slider-label-sub" id="ciscoArr-sub">Subset of total — drives all attach calculations</div>
+      </div>
+      <input type="range" id="ciscoArr" min="0" max="250" step="10" value="100" />
+      <div class="slider-value" id="ciscoArr-out">$100M</div>
     </div>
 
     <div class="slider-row">
@@ -445,11 +462,11 @@
 
   <div class="methodology">
     <h2>How the math works</h2>
-    <p>Each attach ratio is annual Cisco revenue per $1 of annual Qumulo ARR. Multiplying by ARR gives Cisco's annual revenue stream from that category. Each stream is then translated into an EV contribution by an appropriate multiple. Hardware streams use the hardware EV multiple. Splunk and services use fixed multiples reflecting their economics: 8&times; for Splunk (software / SaaS-like) and 1.5&times; for services (low-margin).</p>
+    <p>Total Qumulo ARR drives the standalone SaaS value (Motion 1). Only the Cisco-attached subset of ARR drags Cisco hardware, Splunk, and services. Each attach ratio is annual Cisco revenue per $1 of Cisco-attached Qumulo ARR. Multiplying by Cisco-attached ARR gives Cisco's annual revenue stream from that category, then translated into EV by an appropriate multiple. Hardware streams use the hardware EV multiple; Splunk uses 8&times; (software economics) and services 1.5&times; (low-margin).</p>
 
     <div class="formula">
-<span class="label">Motion 1</span>  =  Qumulo ARR  <span class="op">&times;</span>  SaaS multiple<br/>
-<span class="label">Motion 2</span>  =  Motion 1  <span class="op">+</span>  &Sigma; (ARR  <span class="op">&times;</span>  attach<sub>i</sub>  <span class="op">&times;</span>  multiple<sub>i</sub>)<br/>
+<span class="label">Motion 1</span>  =  Total ARR  <span class="op">&times;</span>  SaaS multiple<br/>
+<span class="label">Motion 2</span>  =  Motion 1  <span class="op">+</span>  &Sigma; (Cisco-attached ARR  <span class="op">&times;</span>  attach<sub>i</sub>  <span class="op">&times;</span>  multiple<sub>i</sub>)<br/>
 <span class="label">Drag premium</span>  =  Motion 2  <span class="op">&divide;</span>  Motion 1
     </div>
 
@@ -495,7 +512,7 @@
     return '$' + Math.round(v) + 'M';
   };
 
-  const ids = ['arr','mult','ucs','net','splunk','svc','hwm'];
+  const ids = ['arr','ciscoArr','mult','ucs','net','splunk','svc','hwm'];
   const inp = {}, out = {};
   ids.forEach(k => {
     inp[k] = document.getElementById(k);
@@ -507,6 +524,7 @@
 
   function compute() {
     const arr = +inp.arr.value;
+    const ciscoArr = Math.min(+inp.ciscoArr.value, arr);
     const mult = +inp.mult.value;
     const ucs = +inp.ucs.value;
     const net = +inp.net.value;
@@ -515,17 +533,26 @@
     const hwm = +inp.hwm.value;
 
     const qumulo = arr * mult;
-    const ucsEV = arr * ucs * hwm;
-    const netEV = arr * net * hwm;
-    const splunkEV = arr * splunk * SPLUNK_MULT;
-    const svcEV = arr * svc * SVC_MULT;
+    const ucsEV = ciscoArr * ucs * hwm;
+    const netEV = ciscoArr * net * hwm;
+    const splunkEV = ciscoArr * splunk * SPLUNK_MULT;
+    const svcEV = ciscoArr * svc * SVC_MULT;
     const m1 = qumulo;
     const m2 = qumulo + ucsEV + netEV + splunkEV + svcEV;
     return { qumulo, ucsEV, netEV, splunkEV, svcEV, m1, m2, premium: m2 / m1 };
   }
 
   function render() {
-    out.arr.textContent = '$' + (+inp.arr.value) + 'M';
+    const totalArr = +inp.arr.value;
+    inp.ciscoArr.max = totalArr;
+    if (+inp.ciscoArr.value > totalArr) inp.ciscoArr.value = totalArr;
+    const ciscoArrVal = +inp.ciscoArr.value;
+    const pct = totalArr > 0 ? Math.round((ciscoArrVal / totalArr) * 100) : 0;
+
+    out.arr.textContent = '$' + totalArr + 'M';
+    out.ciscoArr.textContent = '$' + ciscoArrVal + 'M';
+    document.getElementById('ciscoArr-sub').textContent =
+      'Subset of total \u2014 currently ' + pct + '% ($' + ciscoArrVal + 'M of $' + totalArr + 'M)';
     out.mult.textContent = (+inp.mult.value).toFixed(1) + '\u00D7';
     out.ucs.textContent = (+inp.ucs.value).toFixed(1) + '\u00D7';
     out.net.textContent = (+inp.net.value).toFixed(1) + '\u00D7';
