@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hardware Drag Valuation Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FAF6EE;
+    --surface: #FFFFFF;
+    --border: #E8E0D0;
+    --border-strong: #C9BEA7;
+    --text: #1C1816;
+    --text-muted: #6B5F52;
+    --text-dim: #9A8E80;
+    --ink: #15315B;
+    --rust: #A4501F;
+    --olive: #6B7237;
+    --ochre: #B89249;
+    --slate: #5E5A55;
+    --forest: #2A5C3F;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 48px 24px;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 44px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 12px;
+    font-variation-settings: "opsz" 120;
+  }
+
+  .subtitle {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 19px;
+    color: var(--text-muted);
+    font-weight: 400;
+    max-width: 640px;
+    line-height: 1.4;
+    margin-bottom: 48px;
+  }
+
+  .metric-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .metric-card {
+    background: var(--surface);
+    padding: 24px 28px;
+  }
+
+  .metric-card.featured {
+    background: var(--ink);
+    color: #F5EEDD;
+  }
+
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+
+  .metric-card.featured .metric-label {
+    color: #B5A98A;
+  }
+
+  .metric-value {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 38px;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    font-variation-settings: "opsz" 120;
+  }
+
+  .metric-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    letter-spacing: 0.04em;
+  }
+
+  .metric-card.featured .metric-sub { color: #9A8B6A; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    letter-spacing: 0.02em;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-swatch {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+
+  .legend-value {
+    color: var(--text);
+    font-weight: 500;
+    margin-left: 4px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 28px 24px 20px;
+    margin-bottom: 48px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-strong);
+    padding-bottom: 14px;
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 24px;
+    letter-spacing: -0.005em;
+    font-variation-settings: "opsz" 60;
+  }
+
+  .section-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .sliders {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 8px 28px;
+    margin-bottom: 48px;
+  }
+
+  .slider-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 2fr) 80px;
+    gap: 24px;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .slider-row:last-child { border-bottom: none; }
+
+  .slider-label {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .slider-label-sub {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    font-weight: 400;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+
+  .slider-value {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    text-align: right;
+    color: var(--ink);
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type="range"]:focus { outline: none; }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--border-strong);
+    border: none;
+  }
+  input[type="range"]::-moz-range-track {
+    height: 2px;
+    background: var(--border-strong);
+    border: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    background: var(--ink);
+    border-radius: 50%;
+    margin-top: -7px;
+    border: 2px solid var(--bg);
+    transition: transform 0.15s ease;
+  }
+  input[type="range"]::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    background: var(--ink);
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+    transition: transform 0.15s ease;
+  }
+  input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
+  input[type="range"]:hover::-moz-range-thumb { transform: scale(1.15); }
+
+  .methodology {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px 36px;
+    margin-bottom: 32px;
+  }
+
+  .methodology h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    margin-bottom: 18px;
+    font-variation-settings: "opsz" 60;
+  }
+
+  .methodology p {
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    max-width: 720px;
+  }
+
+  .methodology .formula {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--bg);
+    padding: 14px 18px;
+    border-left: 2px solid var(--ink);
+    color: var(--text);
+    margin: 18px 0;
+    line-height: 1.7;
+  }
+
+  .formula .label { color: var(--text-dim); }
+  .formula .op { color: var(--rust); }
+
+  .footer {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-dot {
+    display: inline-block;
+    margin: 0 12px;
+    color: var(--border-strong);
+  }
+
+  @media (max-width: 720px) {
+    body { padding: 24px 16px; }
+    h1 { font-size: 32px; }
+    .metric-row { grid-template-columns: 1fr; }
+    .metric-value { font-size: 32px; }
+    .slider-row { grid-template-columns: 1fr; gap: 8px; padding: 14px 0; }
+    .slider-value { text-align: left; }
+    .chart-wrap { height: 320px; padding: 16px 12px; }
+    .methodology { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="eyebrow">Valuation framework &mdash; Q · DC · 2026</div>
+  <h1>The Hardware Drag</h1>
+  <p class="subtitle">Two motions for valuing a software company that drags hardware along with it. A financial buyer sees a multiple on ARR. A strategic acquirer sees that, plus everything pulled through the deal.</p>
+
+  <div class="metric-row">
+    <div class="metric-card">
+      <div class="metric-label">Motion 1 &middot; ARR &times; Multiple</div>
+      <div class="metric-value" id="m1">&mdash;</div>
+      <div class="metric-sub">Financial buyer view</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Motion 2 &middot; Hardware Drag</div>
+      <div class="metric-value" id="m2">&mdash;</div>
+      <div class="metric-sub">Strategic value to Cisco</div>
+    </div>
+    <div class="metric-card featured">
+      <div class="metric-label">Drag Premium</div>
+      <div class="metric-value" id="prem">&mdash;</div>
+      <div class="metric-sub">Motion 2 over Motion 1</div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">Value composition</div>
+    <div class="section-meta">EV by stream &middot; $M</div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+  <div class="chart-wrap">
+    <canvas id="chart" role="img" aria-label="Stacked bar chart comparing Motion 1 (ARR times multiple, single block) against Motion 2 (Qumulo SaaS plus UCS hardware, networking, Splunk, and services drag).">Motion 1 shows the standalone SaaS multiple. Motion 2 stacks UCS hardware, networking, Splunk, and services drag on top.</canvas>
+  </div>
+
+  <div class="section-head">
+    <div class="section-title">Assumptions</div>
+    <div class="section-meta">7 inputs &middot; adjust to taste</div>
+  </div>
+
+  <div class="sliders">
+    <div class="slider-row">
+      <div>
+        <div class="slider-label">Qumulo ARR</div>
+        <div class="slider-label-sub">Base — $M of annual recurring revenue</div>
+      </div>
+      <input type="range" id="arr" min="50" max="700" step="10" value="250" />
+      <div class="slider-value" id="arr-out">$250M</div>
+    </div>
+
+    <div class="slider-row">
+      <div>
+        <div class="slider-label">SaaS multiple</div>
+        <div class="slider-label-sub">Motion 1 — applied to standalone ARR</div>
+      </div>
+      <input type="range" id="mult" min="5" max="25" step="0.5" value="10" />
+      <div class="slider-value" id="mult-out">10.0&times;</div>
+    </div>
+
+    <div class="slider-row">
+      <div>
+        <div class="slider-label">UCS attach</div>
+        <div class="slider-label-sub">Cisco $/yr per $ of Qumulo ARR — servers</div>
+      </div>
+      <input type="range" id="ucs" min="0" max="5" step="0.1" value="2.0" />
+      <div class="slider-value" id="ucs-out">2.0&times;</div>
+    </div>
+
+    <div class="slider-row">
+      <div>
+        <div class="slider-label">Networking + optics</div>
+        <div class="slider-label-sub">Nexus, fabric, 100/400/800G optics</div>
+      </div>
+      <input type="range" id="net" min="0" max="2" step="0.1" value="0.6" />
+      <div class="slider-value" id="net-out">0.6&times;</div>
+    </div>
+
+    <div class="slider-row">
+      <div>
+        <div class="slider-label">Splunk attach</div>
+        <div class="slider-label-sub">Software — observability/telemetry pipeline</div>
+      </div>
+      <input type="range" id="splunk" min="0" max="2" step="0.1" value="0.4" />
+      <div class="slider-value" id="splunk-out">0.4&times;</div>
+    </div>
+
+    <div class="slider-row">
+      <div>
+        <div class="slider-label">Services attach</div>
+        <div class="slider-label-sub">PS, integration, support</div>
+      </div>
+      <input type="range" id="svc" min="0" max="1" step="0.05" value="0.25" />
+      <div class="slider-value" id="svc-out">0.25&times;</div>
+    </div>
+
+    <div class="slider-row">
+      <div>
+        <div class="slider-label">Hardware EV multiple</div>
+        <div class="slider-label-sub">Applied to UCS + networking annual revenue</div>
+      </div>
+      <input type="range" id="hwm" min="1" max="8" step="0.5" value="3.0" />
+      <div class="slider-value" id="hwm-out">3.0&times;</div>
+    </div>
+  </div>
+
+  <div class="methodology">
+    <h2>How the math works</h2>
+    <p>Each attach ratio is annual Cisco revenue per $1 of annual Qumulo ARR. Multiplying by ARR gives Cisco's annual revenue stream from that category. Each stream is then translated into an EV contribution by an appropriate multiple. Hardware streams use the hardware EV multiple. Splunk and services use fixed multiples reflecting their economics: 8&times; for Splunk (software / SaaS-like) and 1.5&times; for services (low-margin).</p>
+
+    <div class="formula">
+<span class="label">Motion 1</span>  =  Qumulo ARR  <span class="op">&times;</span>  SaaS multiple<br/>
+<span class="label">Motion 2</span>  =  Motion 1  <span class="op">+</span>  &Sigma; (ARR  <span class="op">&times;</span>  attach<sub>i</sub>  <span class="op">&times;</span>  multiple<sub>i</sub>)<br/>
+<span class="label">Drag premium</span>  =  Motion 2  <span class="op">&divide;</span>  Motion 1
+    </div>
+
+    <p>The model values gross dragged revenue, not gross margin. A more rigorous version would NPV the gross margin contribution at Cisco's WACC, since Cisco captures margin not revenue. Hardware streams also typically have follow-on revenue from refreshes (3&ndash;5 year cycles) and customer expansion not captured here &mdash; meaning the strategic premium in practice runs higher than this model shows.</p>
+  </div>
+
+  <div class="footer">
+    Internal modeling &middot; for negotiation framing
+    <span class="footer-dot">&bull;</span>
+    Assumptions are illustrative
+    <span class="footer-dot">&bull;</span>
+    Not investment advice
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(() => {
+  const COLORS = {
+    saas: '#15315B',
+    ucs: '#A4501F',
+    net: '#C97A4E',
+    splunk: '#B89249',
+    services: '#5E5A55',
+  };
+  const LABELS = {
+    saas: 'Qumulo SaaS',
+    ucs: 'UCS hardware',
+    net: 'Networking + optics',
+    splunk: 'Splunk',
+    services: 'Services',
+  };
+  const SPLUNK_MULT = 8;
+  const SVC_MULT = 1.5;
+
+  const fmt = (v) => {
+    if (v >= 1000) return '$' + (v/1000).toFixed(2) + 'B';
+    return '$' + Math.round(v).toLocaleString() + 'M';
+  };
+  const fmtCompact = (v) => {
+    if (v >= 1000) return '$' + (v/1000).toFixed(1) + 'B';
+    return '$' + Math.round(v) + 'M';
+  };
+
+  const ids = ['arr','mult','ucs','net','splunk','svc','hwm'];
+  const inp = {}, out = {};
+  ids.forEach(k => {
+    inp[k] = document.getElementById(k);
+    out[k] = document.getElementById(k + '-out');
+  });
+
+  const ctx = document.getElementById('chart').getContext('2d');
+  let chart;
+
+  function compute() {
+    const arr = +inp.arr.value;
+    const mult = +inp.mult.value;
+    const ucs = +inp.ucs.value;
+    const net = +inp.net.value;
+    const splunk = +inp.splunk.value;
+    const svc = +inp.svc.value;
+    const hwm = +inp.hwm.value;
+
+    const qumulo = arr * mult;
+    const ucsEV = arr * ucs * hwm;
+    const netEV = arr * net * hwm;
+    const splunkEV = arr * splunk * SPLUNK_MULT;
+    const svcEV = arr * svc * SVC_MULT;
+    const m1 = qumulo;
+    const m2 = qumulo + ucsEV + netEV + splunkEV + svcEV;
+    return { qumulo, ucsEV, netEV, splunkEV, svcEV, m1, m2, premium: m2 / m1 };
+  }
+
+  function render() {
+    out.arr.textContent = '$' + (+inp.arr.value) + 'M';
+    out.mult.textContent = (+inp.mult.value).toFixed(1) + '\u00D7';
+    out.ucs.textContent = (+inp.ucs.value).toFixed(1) + '\u00D7';
+    out.net.textContent = (+inp.net.value).toFixed(1) + '\u00D7';
+    out.splunk.textContent = (+inp.splunk.value).toFixed(1) + '\u00D7';
+    out.svc.textContent = (+inp.svc.value).toFixed(2) + '\u00D7';
+    out.hwm.textContent = (+inp.hwm.value).toFixed(1) + '\u00D7';
+
+    const r = compute();
+    document.getElementById('m1').textContent = fmt(r.m1);
+    document.getElementById('m2').textContent = fmt(r.m2);
+    document.getElementById('prem').textContent = r.premium.toFixed(2) + '\u00D7';
+
+    const data = {
+      labels: [['Motion 1', 'ARR \u00D7 multiple'], ['Motion 2', 'Hardware drag']],
+      datasets: [
+        { label: LABELS.saas,     data: [r.qumulo, r.qumulo],  backgroundColor: COLORS.saas,     borderWidth: 0 },
+        { label: LABELS.ucs,      data: [0, r.ucsEV],          backgroundColor: COLORS.ucs,      borderWidth: 0 },
+        { label: LABELS.net,      data: [0, r.netEV],          backgroundColor: COLORS.net,      borderWidth: 0 },
+        { label: LABELS.splunk,   data: [0, r.splunkEV],       backgroundColor: COLORS.splunk,   borderWidth: 0 },
+        { label: LABELS.services, data: [0, r.svcEV],          backgroundColor: COLORS.services, borderWidth: 0 },
+      ],
+    };
+
+    if (chart) {
+      chart.data = data;
+      chart.update('none');
+    } else {
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 250 },
+          scales: {
+            x: {
+              stacked: true,
+              ticks: { autoSkip: false, font: { size: 13, family: 'IBM Plex Sans' }, color: '#1C1816' },
+              grid: { display: false },
+              border: { color: '#C9BEA7' },
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              ticks: {
+                callback: (v) => fmtCompact(v),
+                font: { size: 11, family: 'IBM Plex Mono' },
+                color: '#6B5F52',
+              },
+              grid: { color: '#EDE5D2' },
+              border: { display: false },
+            },
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1C1816',
+              titleFont: { family: 'IBM Plex Sans', size: 12, weight: '500' },
+              bodyFont: { family: 'IBM Plex Mono', size: 12 },
+              padding: 12,
+              displayColors: true,
+              boxWidth: 10,
+              boxHeight: 10,
+              callbacks: { label: (c) => '  ' + c.dataset.label + ': ' + fmt(c.parsed.y) },
+            },
+          },
+        },
+      });
+    }
+
+    const legend = document.getElementById('legend');
+    legend.innerHTML = '';
+    const items = [
+      { color: COLORS.saas, label: LABELS.saas, val: r.qumulo },
+      { color: COLORS.ucs, label: LABELS.ucs, val: r.ucsEV },
+      { color: COLORS.net, label: LABELS.net, val: r.netEV },
+      { color: COLORS.splunk, label: LABELS.splunk, val: r.splunkEV },
+      { color: COLORS.services, label: LABELS.services, val: r.svcEV },
+    ];
+    items.forEach(({ color, label, val }) => {
+      const span = document.createElement('span');
+      span.className = 'legend-item';
+      span.innerHTML =
+        '<span class="legend-swatch" style="background:' + color + '"></span>' +
+        label + '<span class="legend-value">' + fmt(val) + '</span>';
+      legend.appendChild(span);
+    });
+  }
+
+  Object.values(inp).forEach((el) => el.addEventListener('input', render));
+  render();
+})();
+</script>
+</body>
+</html>
