@@ -282,6 +282,93 @@
   input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
   input[type="range"]:hover::-moz-range-thumb { transform: scale(1.15); }
 
+  .cash-display {
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 400;
+    margin-left: 8px;
+    white-space: nowrap;
+  }
+
+  .cash-input {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    width: 56px;
+    padding: 2px 4px;
+    margin: 0 1px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg);
+    color: var(--ink);
+    text-align: right;
+    border-radius: 2px;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .cash-input::-webkit-outer-spin-button,
+  .cash-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .cash-input:focus {
+    outline: none;
+    border-color: var(--ink);
+    background: var(--surface);
+  }
+
+  .math-summary {
+    border-top: 1px solid var(--border-strong);
+    margin: 8px 0 0;
+    padding: 24px 0 12px;
+  }
+  .math-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .math-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 18px;
+    font-variation-settings: "opsz" 60;
+  }
+  .math-subtitle {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .math-rows { font-family: var(--mono); font-size: 13px; }
+  .math-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 110px;
+    gap: 16px;
+    padding: 6px 0;
+    color: var(--text-muted);
+    align-items: baseline;
+  }
+  .math-row .math-calc { color: var(--text-dim); }
+  .math-row .math-result { color: var(--text); text-align: right; font-weight: 500; }
+  .math-row.math-subtotal {
+    border-top: 1px solid var(--border);
+    margin-top: 6px;
+    padding-top: 12px;
+    color: var(--text);
+  }
+  .math-row.math-subtotal .math-result { color: var(--text); }
+  .math-row.math-total {
+    border-top: 1.5px solid var(--text);
+    margin-top: 4px;
+    padding-top: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    font-size: 15px;
+  }
+  .math-row.math-total .math-result { color: var(--ink); }
+
   .methodology {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -378,7 +465,7 @@
 
   <div class="legend" id="legend"></div>
   <div class="chart-wrap">
-    <canvas id="chart" role="img" aria-label="Stacked bar chart comparing Motion 1 (ARR times multiple, single block) against Motion 2 (Qumulo SaaS plus UCS hardware, networking, Splunk, and services drag).">Motion 1 shows the standalone SaaS multiple. Motion 2 stacks UCS hardware, networking, Splunk, and services drag on top.</canvas>
+    <canvas id="chart" role="img" aria-label="Stacked bar chart comparing Motion 1 (ARR times multiple, single block) against Motion 2 (SaaS plus UCS hardware, networking, Splunk, and services drag).">Motion 1 shows the standalone SaaS multiple. Motion 2 stacks UCS hardware, networking, Splunk, and services drag on top.</canvas>
   </div>
 
   <div class="section-head">
@@ -389,7 +476,7 @@
   <div class="sliders">
     <div class="slider-row">
       <div>
-        <div class="slider-label">Qumulo ARR (total)</div>
+        <div class="slider-label">ARR (total)</div>
         <div class="slider-label-sub">Base — $M of annual recurring revenue</div>
       </div>
       <input type="range" id="arr" min="50" max="700" step="10" value="250" />
@@ -398,7 +485,7 @@
 
     <div class="slider-row tethered">
       <div>
-        <div class="slider-label">↳ Qumulo ARR with Cisco</div>
+        <div class="slider-label">↳ ARR with Cisco</div>
         <div class="slider-label-sub" id="ciscoArr-sub">Subset of total — drives all attach calculations</div>
       </div>
       <input type="range" id="ciscoArr" min="0" max="250" step="10" value="100" />
@@ -416,8 +503,8 @@
 
     <div class="slider-row">
       <div>
-        <div class="slider-label">UCS attach</div>
-        <div class="slider-label-sub">Cisco $/yr per $ of Qumulo ARR — servers</div>
+        <div class="slider-label">UCS attach <span class="cash-display">($<input type="number" class="cash-input" id="ucs-cash" value="200" step="5" min="0" />M annual)</span></div>
+        <div class="slider-label-sub">Cisco $/yr per $ of Cisco-attached ARR — servers</div>
       </div>
       <input type="range" id="ucs" min="0" max="5" step="0.1" value="2.0" />
       <div class="slider-value" id="ucs-out">2.0&times;</div>
@@ -425,7 +512,7 @@
 
     <div class="slider-row">
       <div>
-        <div class="slider-label">Networking + optics</div>
+        <div class="slider-label">Networking + optics <span class="cash-display">($<input type="number" class="cash-input" id="net-cash" value="60" step="5" min="0" />M annual)</span></div>
         <div class="slider-label-sub">Nexus, fabric, 100/400/800G optics</div>
       </div>
       <input type="range" id="net" min="0" max="2" step="0.1" value="0.6" />
@@ -434,7 +521,7 @@
 
     <div class="slider-row">
       <div>
-        <div class="slider-label">Splunk attach</div>
+        <div class="slider-label">Splunk attach <span class="cash-display">($<input type="number" class="cash-input" id="splunk-cash" value="40" step="5" min="0" />M annual)</span></div>
         <div class="slider-label-sub">Software — observability/telemetry pipeline</div>
       </div>
       <input type="range" id="splunk" min="0" max="2" step="0.1" value="0.4" />
@@ -443,7 +530,7 @@
 
     <div class="slider-row">
       <div>
-        <div class="slider-label">Services attach</div>
+        <div class="slider-label">Services attach <span class="cash-display">($<input type="number" class="cash-input" id="svc-cash" value="25" step="5" min="0" />M annual)</span></div>
         <div class="slider-label-sub">PS, integration, support</div>
       </div>
       <input type="range" id="svc" min="0" max="1" step="0.05" value="0.25" />
@@ -458,11 +545,55 @@
       <input type="range" id="hwm" min="1" max="8" step="0.5" value="3.0" />
       <div class="slider-value" id="hwm-out">3.0&times;</div>
     </div>
+
+    <div class="math-summary">
+      <div class="math-summary-header">
+        <span class="math-title">Math summary</span>
+        <span class="math-subtitle">Annual revenue &times; multiple = EV</span>
+      </div>
+      <div class="math-rows">
+        <div class="math-row">
+          <span class="math-label">UCS</span>
+          <span class="math-calc" id="math-ucs-calc">$200M &times; 3.0&times;</span>
+          <span class="math-result" id="math-ucs-result">$600M</span>
+        </div>
+        <div class="math-row">
+          <span class="math-label">Networking</span>
+          <span class="math-calc" id="math-net-calc">$60M &times; 3.0&times;</span>
+          <span class="math-result" id="math-net-result">$180M</span>
+        </div>
+        <div class="math-row">
+          <span class="math-label">Splunk</span>
+          <span class="math-calc" id="math-splunk-calc">$40M &times; 8.0&times;</span>
+          <span class="math-result" id="math-splunk-result">$320M</span>
+        </div>
+        <div class="math-row">
+          <span class="math-label">Services</span>
+          <span class="math-calc" id="math-svc-calc">$25M &times; 1.5&times;</span>
+          <span class="math-result" id="math-svc-result">$38M</span>
+        </div>
+        <div class="math-row math-subtotal">
+          <span class="math-label">Drag EV total</span>
+          <span class="math-calc" id="math-drag-calc">$325M annual rev</span>
+          <span class="math-result" id="math-drag-result">$1,138M</span>
+        </div>
+        <div class="math-row">
+          <span class="math-label">SaaS</span>
+          <span class="math-calc" id="math-saas-calc">$250M &times; 10.0&times; (Motion 1)</span>
+          <span class="math-result" id="math-saas-result">$2,500M</span>
+        </div>
+        <div class="math-row math-total">
+          <span class="math-label">Motion 2 EV</span>
+          <span class="math-calc"></span>
+          <span class="math-result" id="math-m2-result">$3,638M</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="methodology">
     <h2>How the math works</h2>
-    <p>Total Qumulo ARR drives the standalone SaaS value (Motion 1). Only the Cisco-attached subset of ARR drags Cisco hardware, Splunk, and services. Each attach ratio is annual Cisco revenue per $1 of Cisco-attached Qumulo ARR. Multiplying by Cisco-attached ARR gives Cisco's annual revenue stream from that category, then translated into EV by an appropriate multiple. Hardware streams use the hardware EV multiple; Splunk uses 8&times; (software economics) and services 1.5&times; (low-margin).</p>
+    <p>Total ARR drives the standalone SaaS value (Motion 1). Only the Cisco-attached subset of ARR drags Cisco hardware, Splunk, and services. Each attach ratio is annual Cisco revenue per $1 of Cisco-attached ARR. Multiplying by Cisco-attached ARR gives Cisco's annual revenue stream from that category, then translated into EV by an appropriate multiple. Hardware streams use the hardware EV multiple; Splunk uses 8&times; (software economics) and services 1.5&times; (low-margin).</p>
 
     <div class="formula">
 <span class="label">Motion 1</span>  =  Total ARR  <span class="op">&times;</span>  SaaS multiple<br/>
@@ -494,7 +625,7 @@
     services: '#5E5A55',
   };
   const LABELS = {
-    saas: 'Qumulo SaaS',
+    saas: 'SaaS',
     ucs: 'UCS hardware',
     net: 'Networking + optics',
     splunk: 'Splunk',
@@ -519,6 +650,31 @@
     out[k] = document.getElementById(k + '-out');
   });
 
+  // Cash inputs for two-way binding with attach multiples
+  const cashIds = ['ucs','net','splunk','svc'];
+  const cashInp = {};
+  cashIds.forEach(k => { cashInp[k] = document.getElementById(k + '-cash'); });
+
+  // When user edits a cash value, recompute the implied multiple and update the slider
+  cashIds.forEach(k => {
+    cashInp[k].addEventListener('input', () => {
+      const cash = +cashInp[k].value;
+      const ciscoArr = +inp.ciscoArr.value;
+      if (ciscoArr > 0) {
+        const slider = inp[k];
+        const newMult = cash / ciscoArr;
+        const clamped = Math.min(Math.max(newMult, +slider.min), +slider.max);
+        slider.value = clamped;
+      }
+      render();
+    });
+    // On blur, snap displayed cash back to whatever the slider actually represents
+    cashInp[k].addEventListener('blur', () => {
+      const ciscoArr = +inp.ciscoArr.value;
+      cashInp[k].value = Math.round(ciscoArr * (+inp[k].value));
+    });
+  });
+
   const ctx = document.getElementById('chart').getContext('2d');
   let chart;
 
@@ -532,14 +688,14 @@
     const svc = +inp.svc.value;
     const hwm = +inp.hwm.value;
 
-    const qumulo = arr * mult;
+    const saas = arr * mult;
     const ucsEV = ciscoArr * ucs * hwm;
     const netEV = ciscoArr * net * hwm;
     const splunkEV = ciscoArr * splunk * SPLUNK_MULT;
     const svcEV = ciscoArr * svc * SVC_MULT;
-    const m1 = qumulo;
-    const m2 = qumulo + ucsEV + netEV + splunkEV + svcEV;
-    return { qumulo, ucsEV, netEV, splunkEV, svcEV, m1, m2, premium: m2 / m1 };
+    const m1 = saas;
+    const m2 = saas + ucsEV + netEV + splunkEV + svcEV;
+    return { saas, ucsEV, netEV, splunkEV, svcEV, m1, m2, premium: m2 / m1 };
   }
 
   function render() {
@@ -565,10 +721,46 @@
     document.getElementById('m2').textContent = fmt(r.m2);
     document.getElementById('prem').textContent = r.premium.toFixed(2) + '\u00D7';
 
+    // Annual Cisco revenue per stream (from Cisco-attached ARR × attach ratio)
+    const ucsCash = ciscoArrVal * (+inp.ucs.value);
+    const netCash = ciscoArrVal * (+inp.net.value);
+    const splunkCash = ciscoArrVal * (+inp.splunk.value);
+    const svcCash = ciscoArrVal * (+inp.svc.value);
+
+    // Sync cash inputs (skip whichever is focused so user can type freely)
+    const cashMap = { ucs: ucsCash, net: netCash, splunk: splunkCash, svc: svcCash };
+    Object.keys(cashMap).forEach(k => {
+      if (document.activeElement !== cashInp[k]) {
+        cashInp[k].value = Math.round(cashMap[k]);
+      }
+    });
+
+    // Math summary
+    const mFmt = (v) => '$' + Math.round(v).toLocaleString() + 'M';
+    const hwm = +inp.hwm.value;
+    const hwmStr = hwm.toFixed(1) + '\u00D7';
+    document.getElementById('math-ucs-calc').innerHTML = mFmt(ucsCash) + ' \u00D7 ' + hwmStr;
+    document.getElementById('math-ucs-result').textContent = mFmt(r.ucsEV);
+    document.getElementById('math-net-calc').innerHTML = mFmt(netCash) + ' \u00D7 ' + hwmStr;
+    document.getElementById('math-net-result').textContent = mFmt(r.netEV);
+    document.getElementById('math-splunk-calc').innerHTML = mFmt(splunkCash) + ' \u00D7 8.0\u00D7';
+    document.getElementById('math-splunk-result').textContent = mFmt(r.splunkEV);
+    document.getElementById('math-svc-calc').innerHTML = mFmt(svcCash) + ' \u00D7 1.5\u00D7';
+    document.getElementById('math-svc-result').textContent = mFmt(r.svcEV);
+
+    const dragRev = ucsCash + netCash + splunkCash + svcCash;
+    const dragEV = r.ucsEV + r.netEV + r.splunkEV + r.svcEV;
+    document.getElementById('math-drag-calc').textContent = mFmt(dragRev) + ' annual rev';
+    document.getElementById('math-drag-result').textContent = mFmt(dragEV);
+    document.getElementById('math-saas-calc').innerHTML =
+      '$' + totalArr + 'M \u00D7 ' + (+inp.mult.value).toFixed(1) + '\u00D7 (Motion 1)';
+    document.getElementById('math-saas-result').textContent = mFmt(r.m1);
+    document.getElementById('math-m2-result').textContent = mFmt(r.m2);
+
     const data = {
       labels: [['Motion 1', 'ARR \u00D7 multiple'], ['Motion 2', 'Hardware drag']],
       datasets: [
-        { label: LABELS.saas,     data: [r.qumulo, r.qumulo],  backgroundColor: COLORS.saas,     borderWidth: 0 },
+        { label: LABELS.saas,     data: [r.saas, r.saas],  backgroundColor: COLORS.saas,     borderWidth: 0 },
         { label: LABELS.ucs,      data: [0, r.ucsEV],          backgroundColor: COLORS.ucs,      borderWidth: 0 },
         { label: LABELS.net,      data: [0, r.netEV],          backgroundColor: COLORS.net,      borderWidth: 0 },
         { label: LABELS.splunk,   data: [0, r.splunkEV],       backgroundColor: COLORS.splunk,   borderWidth: 0 },
@@ -626,7 +818,7 @@
     const legend = document.getElementById('legend');
     legend.innerHTML = '';
     const items = [
-      { color: COLORS.saas, label: LABELS.saas, val: r.qumulo },
+      { color: COLORS.saas, label: LABELS.saas, val: r.saas },
       { color: COLORS.ucs, label: LABELS.ucs, val: r.ucsEV },
       { color: COLORS.net, label: LABELS.net, val: r.netEV },
       { color: COLORS.splunk, label: LABELS.splunk, val: r.splunkEV },
