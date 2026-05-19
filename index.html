@@ -470,7 +470,7 @@
 
   <div class="section-head">
     <div class="section-title">Assumptions</div>
-    <div class="section-meta">8 inputs &middot; adjust to taste</div>
+    <div class="section-meta">9 inputs &middot; adjust to taste</div>
   </div>
 
   <div class="sliders">
@@ -539,6 +539,15 @@
 
     <div class="slider-row">
       <div>
+        <div class="slider-label">Splunk EV multiple</div>
+        <div class="slider-label-sub">Applied to Splunk annual revenue — software economics</div>
+      </div>
+      <input type="range" id="splunkMult" min="2" max="15" step="0.5" value="8.0" />
+      <div class="slider-value" id="splunkMult-out">8.0&times;</div>
+    </div>
+
+    <div class="slider-row">
+      <div>
         <div class="slider-label">Hardware EV multiple</div>
         <div class="slider-label-sub">Applied to UCS + networking annual revenue</div>
       </div>
@@ -593,7 +602,7 @@
 
   <div class="methodology">
     <h2>How the math works</h2>
-    <p>Total ARR drives the standalone SaaS value (Motion 1). Only the Cisco-attached subset of ARR drags Cisco hardware, Splunk, and services. Each attach ratio is annual Cisco revenue per $1 of Cisco-attached ARR. Multiplying by Cisco-attached ARR gives Cisco's annual revenue stream from that category, then translated into EV by an appropriate multiple. Hardware streams use the hardware EV multiple; Splunk uses 8&times; (software economics) and services 1.5&times; (low-margin).</p>
+    <p>Total ARR drives the standalone SaaS value (Motion 1). Only the Cisco-attached subset of ARR drags Cisco hardware, Splunk, and services. Each attach ratio is annual Cisco revenue per $1 of Cisco-attached ARR. Multiplying by Cisco-attached ARR gives Cisco's annual revenue stream from that category, then translated into EV by an appropriate multiple. UCS and networking use the hardware EV multiple. Splunk has its own EV multiple slider (software economics — Cisco paid 7&times; ARR for Splunk in 2024; trades at a different multiple as a Cisco segment). Services is fixed at 1.5&times; (low-margin).</p>
 
     <div class="formula">
 <span class="label">Motion 1</span>  =  Total ARR  <span class="op">&times;</span>  SaaS multiple<br/>
@@ -631,7 +640,6 @@
     splunk: 'Splunk',
     services: 'Services',
   };
-  const SPLUNK_MULT = 8;
   const SVC_MULT = 1.5;
 
   const fmt = (v) => {
@@ -643,7 +651,7 @@
     return '$' + Math.round(v) + 'M';
   };
 
-  const ids = ['arr','ciscoArr','mult','ucs','net','splunk','svc','hwm'];
+  const ids = ['arr','ciscoArr','mult','ucs','net','splunk','svc','splunkMult','hwm'];
   const inp = {}, out = {};
   ids.forEach(k => {
     inp[k] = document.getElementById(k);
@@ -686,12 +694,13 @@
     const net = +inp.net.value;
     const splunk = +inp.splunk.value;
     const svc = +inp.svc.value;
+    const splunkMult = +inp.splunkMult.value;
     const hwm = +inp.hwm.value;
 
     const saas = arr * mult;
     const ucsEV = ciscoArr * ucs * hwm;
     const netEV = ciscoArr * net * hwm;
-    const splunkEV = ciscoArr * splunk * SPLUNK_MULT;
+    const splunkEV = ciscoArr * splunk * splunkMult;
     const svcEV = ciscoArr * svc * SVC_MULT;
     const m1 = saas;
     const m2 = saas + ucsEV + netEV + splunkEV + svcEV;
@@ -714,6 +723,7 @@
     out.net.textContent = (+inp.net.value).toFixed(1) + '\u00D7';
     out.splunk.textContent = (+inp.splunk.value).toFixed(1) + '\u00D7';
     out.svc.textContent = (+inp.svc.value).toFixed(2) + '\u00D7';
+    out.splunkMult.textContent = (+inp.splunkMult.value).toFixed(1) + '\u00D7';
     out.hwm.textContent = (+inp.hwm.value).toFixed(1) + '\u00D7';
 
     const r = compute();
@@ -743,7 +753,7 @@
     document.getElementById('math-ucs-result').textContent = mFmt(r.ucsEV);
     document.getElementById('math-net-calc').innerHTML = mFmt(netCash) + ' \u00D7 ' + hwmStr;
     document.getElementById('math-net-result').textContent = mFmt(r.netEV);
-    document.getElementById('math-splunk-calc').innerHTML = mFmt(splunkCash) + ' \u00D7 8.0\u00D7';
+    document.getElementById('math-splunk-calc').innerHTML = mFmt(splunkCash) + ' \u00D7 ' + (+inp.splunkMult.value).toFixed(1) + '\u00D7';
     document.getElementById('math-splunk-result').textContent = mFmt(r.splunkEV);
     document.getElementById('math-svc-calc').innerHTML = mFmt(svcCash) + ' \u00D7 1.5\u00D7';
     document.getElementById('math-svc-result').textContent = mFmt(r.svcEV);
